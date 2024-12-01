@@ -16,8 +16,12 @@ inline std::string lm_gguf_kv_to_str(struct lm_gguf_context* ctx, int i) {
 
 // Helper function to format tokens to string
 inline std::string tokens_to_output_formatted_string(llama_context* ctx, llama_token token) {
-    std::vector<char> result(32, 0);
-    llama_token_to_piece(ctx, token, result.data(), result.size());
+    std::vector<char> result(8, 0);
+    const int n_tokens = llama_token_to_piece(ctx, token, result.data(), result.size());
+    if (n_tokens < 0) {
+        result.resize(-n_tokens);
+        llama_token_to_piece(ctx, token, result.data(), result.size());
+    }
     return std::string(result.data());
 }
 
@@ -153,34 +157,32 @@ public:
     void loadPrompt() {
         if (!ctx || params.prompt.empty()) return;
 
-        // Allocate token buffer
-        std::vector<llama_token> tokens(params.prompt.size() + 1);
+        // Get max token count
+        const int max_tokens = llama_n_ctx(ctx);
+        std::vector<llama_token> tokens(max_tokens);
+
+        // Tokenize the prompt
         int n_tokens = llama_tokenize(
             model,
             params.prompt.c_str(),
             params.prompt.length(),
             tokens.data(),
-            tokens.size(),
-            true,
-            false
+            max_tokens,
+            true,  // add_bos
+            false  // special tokens
         );
 
         if (n_tokens < 0) {
-            tokens.resize(-n_tokens);
-            n_tokens = llama_tokenize(
-                model,
-                params.prompt.c_str(),
-                params.prompt.length(),
-                tokens.data(),
-                tokens.size(),
-                true,
-                false
-            );
+            // Handle error
+            return;
         }
 
-        if (n_tokens > 0) {
-            tokens.resize(n_tokens);
-            llama_decode(ctx, llama_batch_get_one(tokens.data(), tokens.size(), 0, 0));
+        tokens.resize(n_tokens);
+
+        // Evaluate the tokens
+        if (llama_decode(ctx, llama_batch_get_one(tokens.data(), tokens.size(), 0, 0)) != 0) {
+            // Handle error
+            return;
         }
     }
 
