@@ -16,8 +16,9 @@ inline std::string lm_gguf_kv_to_str(struct lm_gguf_context* ctx, int i) {
 
 // Helper function to format tokens to string
 inline std::string tokens_to_output_formatted_string(llama_context* ctx, llama_token token) {
-    const char* str = llama_token_to_str(ctx, token);
-    return std::string(str ? str : "");
+    std::vector<char> result(32, 0);
+    llama_token_to_piece(ctx, token, result.data(), result.size());
+    return std::string(result.data());
 }
 
 struct llama_token_data_with_prob {
@@ -151,8 +152,36 @@ public:
 
     void loadPrompt() {
         if (!ctx || params.prompt.empty()) return;
-        std::vector<llama_token> tokens = llama_tokenize(ctx, params.prompt.c_str(), true);
-        llama_eval(ctx, tokens.data(), tokens.size(), 0, params.cpuparams.n_threads);
+
+        // Allocate token buffer
+        std::vector<llama_token> tokens(params.prompt.size() + 1);
+        int n_tokens = llama_tokenize(
+            model,
+            params.prompt.c_str(),
+            params.prompt.length(),
+            tokens.data(),
+            tokens.size(),
+            true,
+            false
+        );
+
+        if (n_tokens < 0) {
+            tokens.resize(-n_tokens);
+            n_tokens = llama_tokenize(
+                model,
+                params.prompt.c_str(),
+                params.prompt.length(),
+                tokens.data(),
+                tokens.size(),
+                true,
+                false
+            );
+        }
+
+        if (n_tokens > 0) {
+            tokens.resize(n_tokens);
+            llama_decode(ctx, llama_batch_get_one(tokens.data(), tokens.size(), 0, 0));
+        }
     }
 
     bool validateModelChatTemplate() const {
