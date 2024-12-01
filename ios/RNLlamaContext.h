@@ -14,6 +14,7 @@
     void (^onProgress)(unsigned int progress);
 
     rnllama::llama_rn_context * llama;
+    NSString *_lastErrorMessage;
 }
 
 + (NSDictionary *)modelInfo:(NSString *)path skip:(NSArray *)skip;
@@ -37,5 +38,6 @@
 - (void)removeLoraAdapters;
 - (NSArray *)getLoadedLoraAdapters;
 - (void)invalidate;
+- (NSString *)getLastError;
 
 @end

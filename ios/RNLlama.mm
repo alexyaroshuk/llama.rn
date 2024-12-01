@@ -54,25 +54,57 @@ RCT_EXPORT_METHOD(initContext:(double)contextId
     }
 
     @try {
-      RNLlamaContext *context = [RNLlamaContext initWithParams:contextParams onProgress:^(unsigned int progress) {
-          dispatch_async(dispatch_get_main_queue(), ^{
-              [self sendEventWithName:@"@RNLlama_onInitContextProgress" body:@{ @"contextId": @(contextId), @"progress": @(progress) }];
-          });
-      }];
-      if (![context isModelLoaded]) {
-          reject(@"llama_cpp_error", @"Failed to load the model", nil);
-          return;
-      }
+        NSString *modelPath = [contextParams objectForKey:@"model"];
+        NSLog(@"[RNLlama] Attempting to load model from path: %@", modelPath);
 
-      [llamaContexts setObject:context forKey:contextIdNumber];
+        BOOL fileExists = [[NSFileManager defaultManager] fileExistsAtPath:modelPath];
+        if (!fileExists) {
+            NSString *errorMsg = [NSString stringWithFormat:@"Model file not found at path: %@", modelPath];
+            NSLog(@"[RNLlama] Error: %@", errorMsg);
+            reject(@"llama_error", errorMsg, nil);
+            return;
+        }
 
-      resolve(@{
-          @"gpu": @([context isMetalEnabled]),
-          @"reasonNoGPU": [context reasonNoMetal],
-          @"model": [context modelInfo],
-      });
+        NSError *attributesError = nil;
+        NSDictionary *attributes = [[NSFileManager defaultManager] attributesOfItemAtPath:modelPath error:&attributesError];
+        if (attributes) {
+            unsigned long long fileSize = [attributes fileSize];
+            NSLog(@"[RNLlama] Model file size: %llu bytes", fileSize);
+        } else {
+            NSLog(@"[RNLlama] Warning: Could not get model file size: %@", attributesError);
+        }
+
+        NSLog(@"[RNLlama] Initialization parameters: %@", contextParams);
+
+        RNLlamaContext *context = [RNLlamaContext initWithParams:contextParams onProgress:^(unsigned int progress) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self sendEventWithName:@"@RNLlama_onInitContextProgress" body:@{ @"contextId": @(contextId), @"progress": @(progress) }];
+                NSLog(@"[RNLlama] Loading progress: %d%%", progress);
+            });
+        }];
+
+        if (![context isModelLoaded]) {
+            NSString *errorMsg = [context getLastError];
+            NSString *detailedError = [NSString stringWithFormat:@"Failed to load the model: %@", errorMsg ?: @"Unknown error"];
+            NSLog(@"[RNLlama] Error: %@", detailedError);
+            reject(@"llama_cpp_error", detailedError, nil);
+            return;
+        }
+
+        NSLog(@"[RNLlama] Model loaded successfully");
+        [llamaContexts setObject:context forKey:contextIdNumber];
+
+        resolve(@{
+            @"gpu": @([context isMetalEnabled]),
+            @"reasonNoGPU": [context reasonNoMetal],
+            @"model": [context modelInfo],
+        });
     } @catch (NSException *exception) {
-      reject(@"llama_cpp_error", exception.reason, nil);
+        NSString *detailedError = [NSString stringWithFormat:@"Exception during model initialization: %@ - %@",
+            exception.name,
+            exception.reason];
+        NSLog(@"[RNLlama] Critical Error: %@", detailedError);
+        reject(@"llama_cpp_error", detailedError, nil);
     }
 }
 

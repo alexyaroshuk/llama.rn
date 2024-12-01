@@ -1,0 +1,22 @@
+{
+    "sourceFile": "ios/RNLlamaContext.h",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1733063024562,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1733063144274,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -13,8 +13,9 @@\n \r\n     void (^onProgress)(unsigned int progress);\r\n \r\n     rnllama::llama_rn_context * llama;\r\n+    NSString *_lastErrorMessage;\r\n }\r\n \r\n + (NSDictionary *)modelInfo:(NSString *)path skip:(NSArray *)skip;\r\n + (instancetype)initWithParams:(NSDictionary *)params onProgress:(void (^)(unsigned int progress))onProgress;\r\n"
+                }
+            ],
+            "date": 1733063024562,
+            "name": "Commit-0",
+            "content": "#ifdef __cplusplus\r\n#import \"llama.h\"\r\n#import \"llama-impl.h\"\r\n#import \"ggml.h\"\r\n#import \"rn-llama.hpp\"\r\n#endif\r\n\r\n\r\n@interface RNLlamaContext : NSObject {\r\n    bool is_metal_enabled;\r\n    bool is_model_loaded;\r\n    NSString * reason_no_metal;\r\n\r\n    void (^onProgress)(unsigned int progress);\r\n\r\n    rnllama::llama_rn_context * llama;\r\n}\r\n\r\n+ (NSDictionary *)modelInfo:(NSString *)path skip:(NSArray *)skip;\r\n+ (instancetype)initWithParams:(NSDictionary *)params onProgress:(void (^)(unsigned int progress))onProgress;\r\n- (void)interruptLoad;\r\n- (bool)isMetalEnabled;\r\n- (NSString *)reasonNoMetal;\r\n- (NSDictionary *)modelInfo;\r\n- (bool)isModelLoaded;\r\n- (bool)isPredicting;\r\n- (NSDictionary *)completion:(NSDictionary *)params onToken:(void (^)(NSMutableDictionary *tokenResult))onToken;\r\n- (void)stopCompletion;\r\n- (NSArray *)tokenize:(NSString *)text;\r\n- (NSString *)detokenize:(NSArray *)tokens;\r\n- (NSDictionary *)embedding:(NSString *)text params:(NSDictionary *)params;\r\n- (NSString *)getFormattedChat:(NSArray *)messages withTemplate:(NSString *)chatTemplate;\r\n- (NSDictionary *)loadSession:(NSString *)path;\r\n- (int)saveSession:(NSString *)path size:(int)size;\r\n- (NSString *)bench:(int)pp tg:(int)tg pl:(int)pl nr:(int)nr;\r\n- (void)applyLoraAdapters:(NSArray *)loraAdapters;\r\n- (void)removeLoraAdapters;\r\n- (NSArray *)getLoadedLoraAdapters;\r\n- (void)invalidate;\r\n- (NSString *)getLastError;\r\n\r\n@end\r\n"
+        }
+    ]
+}

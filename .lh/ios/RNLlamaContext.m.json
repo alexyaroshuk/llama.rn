@@ -1,0 +1,22 @@
+{
+    "sourceFile": "ios/RNLlamaContext.m",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 1,
+            "patches": [
+                {
+                    "date": 1733063024567,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1733063144324,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,5 +1,53 @@\n+@implementation RNLlamaContext {\r\n+    NSString *_lastErrorMessage;\r\n+}\r\n+\r\n++ (instancetype)initWithParams:(NSDictionary *)params onProgress:(void (^)(unsigned int progress))onProgress {\r\n+    RNLlamaContext *context = [[RNLlamaContext alloc] init];\r\n+    if (context) {\r\n+        context->onProgress = onProgress;\r\n+        context->is_metal_enabled = false;\r\n+        context->is_model_loaded = false;\r\n+        context->_lastErrorMessage = nil; // Initialize error message\r\n+\r\n+        @try {\r\n+            // ... existing initialization code ...\r\n+\r\n+            context->llama = new rnllama::llama_rn_context();\r\n+            if (!context->llama) {\r\n+                context->_lastErrorMessage = @\"Failed to allocate llama context\";\r\n+                return context;\r\n+            }\r\n+\r\n+            NSString *model_path = params[@\"model\"];\r\n+            if (!model_path) {\r\n+                context->_lastErrorMessage = @\"No model path provided\";\r\n+                return context;\r\n+            }\r\n+\r\n+            // Track Metal initialization errors\r\n+            NSString *metalError = nil;\r\n+            context->is_metal_enabled = context->llama->init_metal(&metalError);\r\n+            if (!context->is_metal_enabled && metalError) {\r\n+                context->reason_no_metal = metalError;\r\n+            }\r\n+\r\n+            // Track model loading errors\r\n+            NSString *loadError = nil;\r\n+            context->is_model_loaded = context->llama->load_model([model_path UTF8String], params, &loadError);\r\n+            if (!context->is_model_loaded) {\r\n+                context->_lastErrorMessage = loadError ?: @\"Unknown error during model loading\";\r\n+            }\r\n+\r\n+        } @catch (NSException *exception) {\r\n+            context->_lastErrorMessage = [NSString stringWithFormat:@\"%@: %@\",\r\n+                                       exception.name,\r\n+                                       exception.reason];\r\n+        }\r\n+    }\r\n+    return context;\r\n+}\r\n+\r\n - (NSString *)getLastError {\r\n-    // Return the last error message stored during model loading\r\n-    // You'll need to track errors during model loading and store them\r\n-    return _lastErrorMessage; // Add this property to track errors\r\n+    return _lastErrorMessage;\r\n }\n\\ No newline at end of file\n"
+                }
+            ],
+            "date": 1733063024567,
+            "name": "Commit-0",
+            "content": "- (NSString *)getLastError {\r\n    // Return the last error message stored during model loading\r\n    // You'll need to track errors during model loading and store them\r\n    return _lastErrorMessage; // Add this property to track errors\r\n}"
+        }
+    ]
+}

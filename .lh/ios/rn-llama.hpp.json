@@ -1,0 +1,18 @@
+{
+    "sourceFile": "ios/rn-llama.hpp",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1733063144318,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1733063144318,
+            "name": "Commit-0",
+            "content": "namespace rnllama {\r\n    class llama_rn_context {\r\n    public:\r\n        // ... existing declarations ...\r\n\r\n        bool load_model(const char* path, NSDictionary* params, NSString** error) {\r\n            try {\r\n                // Existing loading code...\r\n                return true;\r\n            } catch (const std::exception& e) {\r\n                if (error) {\r\n                    *error = [NSString stringWithUTF8String:e.what()];\r\n                }\r\n                return false;\r\n            }\r\n        }\r\n\r\n        bool init_metal(NSString** error) {\r\n            try {\r\n                // Existing metal initialization...\r\n                return true;\r\n            } catch (const std::exception& e) {\r\n                if (error) {\r\n                    *error = [NSString stringWithUTF8String:e.what()];\r\n                }\r\n                return false;\r\n            }\r\n        }\r\n    };\r\n}"
+        }
+    ]
+}
