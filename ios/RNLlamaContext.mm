@@ -55,6 +55,13 @@
     BOOL isAsset = [params[@"is_model_asset"] boolValue];
     NSString *path = modelPath;
     if (isAsset) path = [[NSBundle mainBundle] pathForResource:modelPath ofType:nil];
+
+    if (![[NSFileManager defaultManager] fileExistsAtPath:path]) {
+        @throw [NSException exceptionWithName:@"LlamaException"
+                                     reason:[NSString stringWithFormat:@"Model file not found at path: %@", path]
+                                   userInfo:nil];
+    }
+
     defaultParams.model = [path UTF8String];
 
     if (params[@"n_ctx"]) defaultParams.n_ctx = [params[@"n_ctx"] intValue];
@@ -145,6 +152,11 @@
     }
 
     context->is_model_loaded = context->llama->loadModel(defaultParams);
+
+    if (!context->is_model_loaded) {
+        NSString *errorMsg = [NSString stringWithFormat:@"Failed to load model at path: %@. Please check file permissions and memory availability.", path];
+        @throw [NSException exceptionWithName:@"LlamaException" reason:errorMsg userInfo:nil];
+    }
 
     if (
         params[@"embedding"] && [params[@"embedding"] boolValue] &&

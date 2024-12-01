@@ -1,0 +1,18 @@
+{
+    "sourceFile": "ios/rn-llama.hpp",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1733070571467,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1733070571467,
+            "name": "Commit-0",
+            "content": "class llama_rn_context {\r\nprivate:\r\n    llama_model* model;\r\n    llama_context* ctx;\r\n    bool is_load_interrupted;\r\n    int loading_progress;\r\n    std::string last_error;\r\n\r\npublic:\r\n    llama_rn_context() : model(nullptr), ctx(nullptr), is_load_interrupted(false), loading_progress(0) {}\r\n\r\n    bool load_model(const common_params& params, NSString** error) {\r\n        try {\r\n            // Check file access\r\n            FILE* f = fopen(params.model.c_str(), \"rb\");\r\n            if (!f) {\r\n                last_error = \"Cannot open model file: \" + std::string(strerror(errno));\r\n                if (error) *error = [NSString stringWithUTF8String:last_error.c_str()];\r\n                return false;\r\n            }\r\n            fclose(f);\r\n\r\n            // Load model\r\n            llama_model_params model_params = llama_model_default_params();\r\n            model = llama_load_model_from_file(params.model.c_str(), model_params);\r\n\r\n            if (!model) {\r\n                last_error = \"Failed to load model: llama_load_model_from_file returned null\";\r\n                if (error) *error = [NSString stringWithUTF8String:last_error.c_str()];\r\n                return false;\r\n            }\r\n\r\n            // Initialize context\r\n            llama_context_params ctx_params = llama_context_default_params();\r\n            ctx_params.n_ctx = params.n_ctx;\r\n            ctx = llama_new_context_with_model(model, ctx_params);\r\n\r\n            if (!ctx) {\r\n                last_error = \"Failed to create context\";\r\n                if (error) *error = [NSString stringWithUTF8String:last_error.c_str()];\r\n                llama_free_model(model);\r\n                model = nullptr;\r\n                return false;\r\n            }\r\n\r\n            return true;\r\n\r\n        } catch (const std::exception& e) {\r\n            last_error = std::string(\"Exception during model loading: \") + e.what();\r\n            if (error) *error = [NSString stringWithUTF8String:last_error.c_str()];\r\n            return false;\r\n        }\r\n    }\r\n\r\n    // ... rest of the class implementation ...\r\n};"
+        }
+    ]
+}

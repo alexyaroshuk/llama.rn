@@ -1,0 +1,18 @@
+{
+    "sourceFile": "example/tsconfig.json",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1733070571471,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1733070571471,
+            "name": "Commit-0",
+            "content": "{\r\n  \"compilerOptions\": {\r\n    \"target\": \"esnext\",\r\n    \"module\": \"esnext\",\r\n    \"lib\": [\"esnext\", \"dom\"],\r\n    \"allowJs\": true,\r\n    \"jsx\": \"react-native\",\r\n    \"noEmit\": true,\r\n    \"isolatedModules\": true,\r\n    \"strict\": true,\r\n    \"moduleResolution\": \"node\",\r\n    \"allowSyntheticDefaultImports\": true,\r\n    \"esModuleInterop\": true,\r\n    \"skipLibCheck\": true,\r\n    \"resolveJsonModule\": true\r\n  },\r\n  \"exclude\": [\r\n    \"node_modules\",\r\n    \"babel.config.js\",\r\n    \"metro.config.js\",\r\n    \"jest.config.js\"\r\n  ]\r\n}"
+        }
+    ]
+}

@@ -42,20 +42,45 @@ const renderBubble = ({
   message: MessageType.Any
 }) => <Bubble child={child} message={message} />
 
+// Add type declarations for messages and state
+type Message = MessageType.Any
+type Messages = Message[]
+
+// Add proper types for error handling
+type LlamaError = {
+  message: string
+}
+
+// Add proper types for session and completion results
+type SessionDetails = {
+  tokens_loaded: number
+}
+
+type CompletionResult = {
+  timings: {
+    predicted_per_token_ms: number
+    predicted_per_second: number
+  }
+}
+
+// Add proper types for message handling
+type MessageData = {
+  token: string
+}
+
 export default function App() {
   const [context, setContext] = useState<LlamaContext | undefined>(undefined)
 
   const [inferencing, setInferencing] = useState<boolean>(false)
-  const [messages, setMessages] = useState<MessageType.Any[]>([])
+  const [messages, setMessages] = useState<Message[]>([])
 
   const conversationIdRef = useRef<string>(defaultConversationId)
 
-  const addMessage = (message: MessageType.Any, batching = false) => {
+  const addMessage = (message: Message, batching = false) => {
     if (batching) {
-      // This can avoid the message duplication in a same batch
       setMessages([message, ...messages])
     } else {
-      setMessages((msgs) => [message, ...msgs])
+      setMessages((msgs: Messages) => [message, ...msgs])
     }
   }
 
@@ -81,8 +106,8 @@ export default function App() {
         setContext(undefined)
         addSystemMessage('Context released!')
       })
-      .catch((err) => {
-        addSystemMessage(`Context release failed: ${err}`)
+      .catch((err: LlamaError) => {
+        addSystemMessage(`Context release failed: ${err.message}`)
       })
   }
 
@@ -101,55 +126,55 @@ export default function App() {
     await getModelInfo(file.uri)
     const msgId = addSystemMessage('Initializing context...')
     const t0 = Date.now()
-    initLlama(
-      {
-        model: file.uri,
-        use_mlock: true,
-        n_gpu_layers: Platform.OS === 'ios' ? 99 : 0, // > 0: enable GPU
-
-        // embedding: true,
-        lora_list: loraFile ? [{ path: loraFile.uri, scaled: 1.0 }] : undefined, // Or lora: loraFile?.uri,
-      },
-      (progress) => {
-        setMessages((msgs) => {
-          const index = msgs.findIndex((msg) => msg.id === msgId)
-          if (index >= 0) {
-            return msgs.map((msg, i) => {
-              if (msg.type == 'text' && i === index) {
-                return {
-                  ...msg,
-                  text: `Initializing context... ${progress}%`,
+    try {
+      const ctx = await initLlama(
+        {
+          model: file.uri,
+          use_mlock: true,
+          n_gpu_layers: Platform.OS === 'ios' ? 99 : 0,
+          use_progress_callback: true,
+          lora_list: loraFile ? [{ path: loraFile.uri, scaled: 1.0 }] : undefined,
+        },
+        (progress: number) => {
+          setMessages((msgs: Messages) => {
+            const index = msgs.findIndex((msg: Message) => msg.id === msgId)
+            if (index >= 0) {
+              return msgs.map((msg: Message, i: number) => {
+                if (msg.type === 'text' && i === index) {
+                  return {
+                    ...msg,
+                    text: `Initializing context... ${progress}%`,
+                  }
                 }
-              }
-              return msg
-            })
-          }
-          return msgs
-        })
-      },
-    )
-      .then((ctx) => {
-        const t1 = Date.now()
-        setContext(ctx)
-        addSystemMessage(
-          `Context initialized!\n\nLoad time: ${t1 - t0}ms\nGPU: ${
-            ctx.gpu ? 'YES' : 'NO'
-          } (${ctx.reasonNoGPU})\nChat Template: ${
-            ctx.model.isChatTemplateSupported ? 'YES' : 'NO'
-          }\n\n` +
-            'You can use the following commands:\n\n' +
-            '- /info: to get the model info\n' +
-            '- /bench: to benchmark the model\n' +
-            '- /release: release the context\n' +
-            '- /stop: stop the current completion\n' +
-            '- /reset: reset the conversation' +
-            '- /save-session: save the session tokens\n' +
-            '- /load-session: load the session tokens',
-        )
-      })
-      .catch((err) => {
-        addSystemMessage(`Context initialization failed: ${err.message}`)
-      })
+                return msg
+              })
+            }
+            return msgs
+          })
+        },
+      )
+      const t1 = Date.now()
+      setContext(ctx)
+      addSystemMessage(
+        `Context initialized!\n\nLoad time: ${t1 - t0}ms\nGPU: ${
+          ctx.gpu ? 'YES' : 'NO'
+        } (${ctx.reasonNoGPU})\nChat Template: ${
+          ctx.model.isChatTemplateSupported ? 'YES' : 'NO'
+        }\n\n` +
+          'You can use the following commands:\n\n' +
+          '- /info: to get the model info\n' +
+          '- /bench: to benchmark the model\n' +
+          '- /release: release the context\n' +
+          '- /stop: stop the current completion\n' +
+          '- /reset: reset the conversation' +
+          '- /save-session: save the session tokens\n' +
+          '- /load-session: load the session tokens',
+      )
+    } catch (err: unknown) {
+      const error = err as LlamaError
+      const errorMsg = error.message || 'Unknown error'
+      addSystemMessage(`Context initialization failed: ${errorMsg}\n\nPlease check:\n1. Model file exists and is accessible\n2. Sufficient memory available\n3. Model file is not corrupted`)
+    }
   }
 
   const copyFileIfNeeded = async (
@@ -456,7 +481,7 @@ export default function App() {
           penalize_nl: false,
           ignore_eos: false,
           stop: [
-            '</s>',
+            '',
             '<|end|>',
             '<|eot_id|>',
             '<|end_of_text|>',
@@ -469,13 +494,13 @@ export default function App() {
           // n_threads: 4,
           // logit_bias: [[15043,1.0]],
         },
-        (data) => {
+        (data: MessageData) => {
           const { token } = data
-          setMessages((msgs) => {
-            const index = msgs.findIndex((msg) => msg.id === id)
+          setMessages((msgs: Messages) => {
+            const index = msgs.findIndex((msg: Message) => msg.id === id)
             if (index >= 0) {
-              return msgs.map((msg, i) => {
-                if (msg.type == 'text' && i === index) {
+              return msgs.map((msg: Message, i: number) => {
+                if (msg.type === 'text' && i === index) {
                   return {
                     ...msg,
                     text: (msg.text + token).replace(/^\s+/, ''),
@@ -501,16 +526,16 @@ export default function App() {
           })
         },
       )
-      .then((completionResult) => {
+      .then((completionResult: CompletionResult) => {
         console.log('completionResult: ', completionResult)
         const timings = `${completionResult.timings.predicted_per_token_ms.toFixed()}ms per token, ${completionResult.timings.predicted_per_second.toFixed(
           2,
         )} tokens per second`
-        setMessages((msgs) => {
-          const index = msgs.findIndex((msg) => msg.id === id)
+        setMessages((msgs: Messages) => {
+          const index = msgs.findIndex((msg: Message) => msg.id === id)
           if (index >= 0) {
-            return msgs.map((msg, i) => {
-              if (msg.type == 'text' && i === index) {
+            return msgs.map((msg: Message, i: number) => {
+              if (msg.type === 'text' && i === index) {
                 return {
                   ...msg,
                   metadata: {
@@ -526,10 +551,10 @@ export default function App() {
         })
         setInferencing(false)
       })
-      .catch((e) => {
-        console.log('completion error: ', e)
+      .catch((err: LlamaError) => {
+        console.log('completion error: ', err)
         setInferencing(false)
-        addSystemMessage(`Completion failed: ${e.message}`)
+        addSystemMessage(`Completion failed: ${err.message}`)
       })
   }
 
