@@ -3,11 +3,15 @@
     "activeCommit": 0,
     "commits": [
         {
-            "activePatchIndex": 0,
+            "activePatchIndex": 1,
             "patches": [
                 {
                     "date": 1733063144318,
                     "content": "Index: \n===================================================================\n--- \n+++ \n"
+                },
+                {
+                    "date": 1733068667340,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n@@ -1,12 +1,34 @@\n+#pragma once\r\n+\r\n+#include <exception>\r\n+#include <string>\r\n+#include \"llama.h\"\r\n+\r\n namespace rnllama {\r\n+    struct common_lora_adapter_info {\r\n+        const char* path;\r\n+        float scale;\r\n+    };\r\n+\r\n     class llama_rn_context {\r\n+    private:\r\n+        llama_model* model;\r\n+        llama_context* ctx;\r\n+        bool is_load_interrupted;\r\n+        int loading_progress;\r\n+\r\n     public:\r\n-        // ... existing declarations ...\r\n+        llama_rn_context() : model(nullptr), ctx(nullptr), is_load_interrupted(false), loading_progress(0) {}\r\n \r\n+        ~llama_rn_context() {\r\n+            if (ctx) llama_free(ctx);\r\n+            if (model) llama_free_model(model);\r\n+        }\r\n+\r\n         bool load_model(const char* path, NSDictionary* params, NSString** error) {\r\n             try {\r\n-                // Existing loading code...\r\n+                // Your existing model loading code here\r\n                 return true;\r\n             } catch (const std::exception& e) {\r\n                 if (error) {\r\n                     *error = [NSString stringWithUTF8String:e.what()];\r\n@@ -16,15 +38,24 @@\n         }\r\n \r\n         bool init_metal(NSString** error) {\r\n             try {\r\n-                // Existing metal initialization...\r\n+                // Your existing metal initialization code here\r\n                 return true;\r\n             } catch (const std::exception& e) {\r\n                 if (error) {\r\n                     *error = [NSString stringWithUTF8String:e.what()];\r\n                 }\r\n                 return false;\r\n             }\r\n         }\r\n+\r\n+        // Add getters for private members\r\n+        bool get_is_load_interrupted() const { return is_load_interrupted; }\r\n+        void set_is_load_interrupted(bool value) { is_load_interrupted = value; }\r\n+\r\n+        int get_loading_progress() const { return loading_progress; }\r\n+        void set_loading_progress(int value) { loading_progress = value; }\r\n+\r\n+        llama_model* get_model() const { return model; }\r\n     };\r\n }\n\\ No newline at end of file\n"
                 }
             ],
             "date": 1733063144318,
