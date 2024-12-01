@@ -5,8 +5,14 @@
 #include <vector>
 #include "llama.h"
 #include "common.h"
+#include "ggml.h"
 
 namespace rnllama {
+
+// Helper function to convert GGUF key-value to string
+inline std::string lm_gguf_kv_to_str(struct lm_gguf_context* ctx, int i) {
+    return std::string(lm_gguf_get_val_str(ctx, i));
+}
 
 struct completion_token_output {
     llama_token tok;
@@ -14,15 +20,17 @@ struct completion_token_output {
 };
 
 class llama_rn_context {
-private:
+public:  // Make these public since they're accessed from Objective-C
     llama_model* model;
     llama_context* ctx;
     bool is_load_interrupted;
     int loading_progress;
+    bool is_predicting;
     std::string last_error;
 
 public:
-    llama_rn_context() : model(nullptr), ctx(nullptr), is_load_interrupted(false), loading_progress(0) {}
+    llama_rn_context() : model(nullptr), ctx(nullptr), is_load_interrupted(false),
+                        loading_progress(0), is_predicting(false) {}
 
     ~llama_rn_context() {
         if (ctx) llama_free(ctx);
@@ -72,6 +80,17 @@ public:
         }
     }
 
+    bool validateModelChatTemplate() const {
+        // Add implementation based on your requirements
+        return true;
+    }
+
+    int applyLoraAdapters(const std::vector<common_lora_adapter_info>& adapters) {
+        // Add implementation based on your requirements
+        return 0;
+    }
+
+    // Getter methods for compatibility
     llama_model* get_model() const { return model; }
     llama_context* get_context() const { return ctx; }
     bool get_is_load_interrupted() const { return is_load_interrupted; }
