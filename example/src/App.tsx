@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react'
+/* import React, { useState, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { Platform } from 'react-native'
 import { SafeAreaProvider } from 'react-native-safe-area-context'
@@ -577,3 +577,4 @@ export default function App() {
     </SafeAreaProvider>
   )
 }
+ */
