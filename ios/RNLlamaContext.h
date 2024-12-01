@@ -2,9 +2,9 @@
 #import "llama.h"
 #import "llama-impl.h"
 #import "ggml.h"
+#import "common.h"
 #import "rn-llama.hpp"
 #endif
-
 
 @interface RNLlamaContext : NSObject {
     bool is_metal_enabled;

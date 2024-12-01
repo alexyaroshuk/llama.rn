@@ -1,3 +1,18 @@
+#pragma once
+
+#include <string>
+#include <exception>
+#include <vector>
+#include "llama.h"
+#include "common.h"
+
+namespace rnllama {
+
+struct completion_token_output {
+    llama_token tok;
+    std::vector<llama_token_data> probs;
+};
+
 class llama_rn_context {
 private:
     llama_model* model;
@@ -8,6 +23,11 @@ private:
 
 public:
     llama_rn_context() : model(nullptr), ctx(nullptr), is_load_interrupted(false), loading_progress(0) {}
+
+    ~llama_rn_context() {
+        if (ctx) llama_free(ctx);
+        if (model) llama_free_model(model);
+    }
 
     bool load_model(const common_params& params, NSString** error) {
         try {
@@ -52,5 +72,12 @@ public:
         }
     }
 
-    // ... rest of the class implementation ...
+    llama_model* get_model() const { return model; }
+    llama_context* get_context() const { return ctx; }
+    bool get_is_load_interrupted() const { return is_load_interrupted; }
+    void set_is_load_interrupted(bool value) { is_load_interrupted = value; }
+    int get_loading_progress() const { return loading_progress; }
+    void set_loading_progress(int value) { loading_progress = value; }
 };
+
+} // namespace rnllama
