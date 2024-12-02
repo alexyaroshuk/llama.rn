@@ -1,0 +1,52 @@
+workflows:
+  ios-ci-build:
+    name: iOS CI Build
+    max_build_duration: 30
+    instance_type: mac_mini_m1
+    environment:
+      node: 18.17.1
+      xcode: latest
+      cocoapods: default
+      vars:
+        RCT_NEW_ARCH_ENABLED: 0
+        USE_HERMES: 1
+        IPHONEOS_DEPLOYMENT_TARGET: "13.0"
+    cache:
+      cache_paths:
+        - ~/.npm
+        - ~/Library/Caches/CocoaPods
+        - ios/Pods
+        - node_modules
+    scripts:
+      - name: Install npm dependencies
+        script: |
+          npm ci
+      - name: Install Pods
+        script: |
+          cd ios
+          pod install --repo-update
+      - name: Build iOS
+        script: |
+          cd ios
+          xcodebuild \
+            -workspace rntesttwo.xcworkspace \
+            -scheme rntesttwo \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_ENTITLEMENTS="" \
+            RCT_NEW_ARCH_ENABLED=0 \
+            ONLY_ACTIVE_ARCH=NO \
+            IPHONEOS_DEPLOYMENT_TARGET=13.0
+      - name: Package IPA
+        script: |
+          cd ios
+          mkdir Payload
+          cp -r build/Build/Products/Release-iphoneos/*.app Payload/
+          zip -r app.ipa Payload/
+          rm -rf Payload/
+    artifacts:
+      - ios/app.ipa

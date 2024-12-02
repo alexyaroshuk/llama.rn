@@ -1,0 +1,18 @@
+{
+    "sourceFile": "codemagic.yaml",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1733115836044,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1733115836044,
+            "name": "Commit-0",
+            "content": "workflows:\r\n  ios-ci-build:\r\n    name: iOS CI Build\r\n    max_build_duration: 30\r\n    instance_type: mac_mini_m1\r\n    environment:\r\n      node: 18.17.1\r\n      xcode: latest\r\n      cocoapods: default\r\n      vars:\r\n        RCT_NEW_ARCH_ENABLED: 0\r\n        USE_HERMES: 1\r\n        IPHONEOS_DEPLOYMENT_TARGET: \"13.0\"\r\n    cache:\r\n      cache_paths:\r\n        - ~/.npm\r\n        - ~/Library/Caches/CocoaPods\r\n        - ios/Pods\r\n        - node_modules\r\n    scripts:\r\n      - name: Install npm dependencies\r\n        script: |\r\n          npm ci\r\n      - name: Install Pods\r\n        script: |\r\n          cd ios\r\n          pod install --repo-update\r\n      - name: Build iOS\r\n        script: |\r\n          cd ios\r\n          xcodebuild \\\r\n            -workspace rntesttwo.xcworkspace \\\r\n            -scheme rntesttwo \\\r\n            -configuration Release \\\r\n            -sdk iphoneos \\\r\n            -derivedDataPath build \\\r\n            CODE_SIGNING_ALLOWED=NO \\\r\n            CODE_SIGNING_REQUIRED=NO \\\r\n            CODE_SIGN_IDENTITY=\"\" \\\r\n            CODE_SIGN_ENTITLEMENTS=\"\" \\\r\n            RCT_NEW_ARCH_ENABLED=0 \\\r\n            ONLY_ACTIVE_ARCH=NO \\\r\n            IPHONEOS_DEPLOYMENT_TARGET=13.0\r\n      - name: Package IPA\r\n        script: |\r\n          cd ios\r\n          mkdir Payload\r\n          cp -r build/Build/Products/Release-iphoneos/*.app Payload/\r\n          zip -r app.ipa Payload/\r\n          rm -rf Payload/\r\n    artifacts:\r\n      - ios/app.ipa\r\n"
+        }
+    ]
+}

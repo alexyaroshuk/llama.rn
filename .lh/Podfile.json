@@ -1,0 +1,18 @@
+{
+    "sourceFile": "Podfile",
+    "activeCommit": 0,
+    "commits": [
+        {
+            "activePatchIndex": 0,
+            "patches": [
+                {
+                    "date": 1733115836042,
+                    "content": "Index: \n===================================================================\n--- \n+++ \n"
+                }
+            ],
+            "date": 1733115836042,
+            "name": "Commit-0",
+            "content": "# Resolve react_native_pods.rb with node to allow for hoisting\r\nrequire Pod::Executable.execute_command('node', ['-p',\r\n  'require.resolve(\r\n    \"react-native/scripts/react_native_pods.rb\",\r\n    {paths: [process.argv[1]]},\r\n  )', __dir__]).strip\r\n\r\n# Update minimum iOS version to 13.0 to support Metal features\r\nplatform :ios, '13.0'\r\nprepare_react_native_project!\r\n\r\nlinkage = ENV['USE_FRAMEWORKS']\r\nif linkage != nil\r\n  Pod::UI.puts \"Configuring Pod with #{linkage}ally linked Frameworks\".green\r\n  use_frameworks! :linkage => linkage.to_sym\r\nend\r\n\r\ntarget 'rntesttwo' do\r\n  config = use_native_modules!\r\n\r\n  use_react_native!(\r\n    :path => config[:reactNativePath],\r\n    :app_path => \"#{Pod::Config.instance.installation_root}/..\"\r\n  )\r\n\r\n  pod 'ReactCommon/turbomodule/core', :path => '../node_modules/react-native/ReactCommon'\r\n\r\n  target 'rntesttwoTests' do\r\n    inherit! :complete\r\n  end\r\n\r\n  post_install do |installer|\r\n    # React Native post install\r\n    react_native_post_install(\r\n      installer,\r\n      config[:reactNativePath],\r\n      :mac_catalyst_enabled => false\r\n    )\r\n\r\n    # Fix RCTTurboModule import\r\n    system('sed -i \"\" \"s/#import <ReactCommon\\\\/RCTTurboModule.h>/#import \\\\\"RCTTurboModule.h\\\\\"/\" \"./build/generated/ios/RNLlamaSpec.h\"')\r\n\r\n    # Update deployment target for all pods\r\n    installer.pods_project.targets.each do |target|\r\n      target.build_configurations.each do |config|\r\n        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.0'\r\n      end\r\n    end\r\n\r\n    # Add Metal availability checks\r\n    installer.pods_project.targets.each do |target|\r\n      if target.name == 'llama-rn'\r\n        target.build_configurations.each do |config|\r\n          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)']\r\n          config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] << 'GGML_METAL_SUPPORTS_FAMILY=1'\r\n        end\r\n      end\r\n    end\r\n  end\r\nend\r\n\r\n"
+        }
+    ]
+}
